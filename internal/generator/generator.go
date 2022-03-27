@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"text/template"
 
 	"github.com/evald24/go-gen-config/internal/helpers"
 	"github.com/iancoleman/strcase"
@@ -18,15 +19,15 @@ import (
 type generator struct {
 	templatePath string
 	outputPath   string
+	configPath   string
 	cfgMap       map[string]interface{}
-	fset         *token.FileSet
 }
 
-func New(templatePath, outputPath string) *generator {
+func New(templatePath, outputPath, configPath string) *generator {
 	return &generator{
 		templatePath: templatePath,
 		outputPath:   outputPath,
-		fset:         token.NewFileSet(),
+		configPath:   configPath,
 	}
 }
 
@@ -45,13 +46,12 @@ func (g *generator) readTemplate() error {
 	return nil
 }
 
-func (g *generator) buildTemplate() (*bytes.Buffer, error) {
-
+func (g *generator) getParams() ([]ConfigItem, error) {
 	if err := g.readTemplate(); err != nil {
 		return nil, err
 	}
 
-	var params []ConfigItem
+	params := make([]ConfigItem, 0, len(g.cfgMap))
 	for k, v := range g.cfgMap {
 		value, _ := v.(map[string]interface{})
 		// if !ok {
@@ -73,6 +73,7 @@ func (g *generator) buildTemplate() (*bytes.Buffer, error) {
 
 		if helpers.Contains(baseTypes, valueType) {
 			params = append(params, ConfigItem{
+				Key:         k,
 				Name:        name,
 				Description: description,
 				Type:        valueType,
@@ -95,6 +96,7 @@ func (g *generator) buildTemplate() (*bytes.Buffer, error) {
 			}
 
 			params = append(params, ConfigItem{
+				Key:         k,
 				Name:        name,
 				Description: description,
 				Type:        constType,
@@ -107,8 +109,12 @@ func (g *generator) buildTemplate() (*bytes.Buffer, error) {
 		}
 	}
 
+	return params, nil
+}
+
+func (g *generator) buildTemplate(tpl *template.Template, params []ConfigItem) (*bytes.Buffer, error) {
 	var buf bytes.Buffer
-	if err := Template.Execute(&buf, params); err != nil {
+	if err := tpl.Execute(&buf, params); err != nil {
 		return nil, fmt.Errorf("execute template: %v", err)
 	}
 
@@ -122,25 +128,48 @@ var baseTypes = []string{
 }
 
 func (g *generator) Generate() error {
-	buf, err := g.buildTemplate()
+	params, err := g.getParams()
 	if err != nil {
 		return err
 	}
 
-	astOutFile, err := parser.ParseFile(g.fset, "", buf.Bytes(), parser.ParseComments)
+	// Generate code
+	bufCode, err := g.buildTemplate(TemplateCode, params)
+	if err != nil {
+		return err
+	}
+
+	fset := token.NewFileSet()
+	astOutFile, err := parser.ParseFile(fset, "", bufCode.Bytes(), parser.ParseComments)
 	if err != nil {
 		return fmt.Errorf("parse template: %v", err)
 	}
 
-	outFile, err := os.Create(g.outputPath)
+	outFile, err := helpers.CreateFile(g.outputPath)
 	if err != nil {
 		return fmt.Errorf("create file: %v", err)
 	}
+	defer outFile.Close()
 
-	err = printer.Fprint(outFile, g.fset, astOutFile)
+	err = printer.Fprint(outFile, fset, astOutFile)
 	if err != nil {
 		log.Fatalf("print file: %v", err)
 	}
+
+	// Generate config file
+
+	bufConfig, err := g.buildTemplate(TemplateConfig, params)
+	if err != nil {
+		return err
+	}
+
+	configFile, err := helpers.CreateFile(g.configPath)
+	if err != nil {
+		return fmt.Errorf("create config file: %v", err)
+	}
+	defer configFile.Close()
+
+	configFile.Write(bufConfig.Bytes())
 
 	return nil
 }

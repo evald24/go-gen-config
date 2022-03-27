@@ -1,6 +1,10 @@
 package helpers
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+)
 
 func Contains(arr []string, value string) bool {
 	for index := range arr {
@@ -26,4 +30,11 @@ func GetEnum(m map[string]interface{}) []string {
 		}
 	}
 	return result
+}
+
+func CreateFile(p string) (*os.File, error) {
+	if err := os.MkdirAll(filepath.Dir(p), 0770); err != nil {
+		return nil, err
+	}
+	return os.Create(p)
 }

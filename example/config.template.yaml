@@ -4,6 +4,16 @@ debug:
   env: DEBUG
   default: true
 
+name:
+  description: App name
+  type: string
+  default: "Evald"
+
+age:
+  description: Age
+  type: uint8
+  default: 0
+
 logLevel:
   env: LOG_LEVEL
   type: enum
