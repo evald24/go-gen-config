@@ -9,7 +9,8 @@
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${file}",
+      "program": "${workspaceFolder}/cmd/go-gen-config/main.go",
+      "args": ["-t", "${workspaceFolder}/example/config.template.yaml", "-o", "${workspaceFolder}/example/config.gen.go"],
       "buildFlags": ""
     }
   ]

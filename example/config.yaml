@@ -1,9 +1,17 @@
-
-debug: true # Debug mode
-
-name: Evald # App name
-
-age: 0 # Age
-
-logLevel: DEBUG # Description of the variable
-
+age: 0
+debug: true
+grpc:
+    host: 127.0.0.1
+    maxConnectionAge: 5
+    maxConnectionAgeGrace: 5
+    maxConnectionIdle: 5
+    port: 50051
+    time: 15
+    timeout: 15
+logLevel: DEBUG
+name: Evald
+project:
+    description: My service description
+    environment: DEV
+    name: my-service-api
+    title: My service API

@@ -8,13 +8,14 @@ import (
 )
 
 func main() {
-	if err := config.Init("./config.yaml"); err != nil {
+	if err := config.Init("example/config.yaml"); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("debug: %+v\n", config.GetDebug())
 	fmt.Printf("logLevel %+v\n", config.GetLogLevel())
 	fmt.Printf("name %+v\n", config.GetName())
-	fmt.Printf("age %+v\n", config.GetAge())
+	fmt.Printf("age %+v\n", config.GetProject())
+	fmt.Printf("age %+v\n", config.GetGrpc())
 
 }

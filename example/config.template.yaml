@@ -2,22 +2,22 @@ debug:
   description: Debug mode
   type: bool
   env: DEBUG
-  default: true
+  value: true
 
 name:
   description: App name
   type: string
-  default: "Evald"
+  value: "Evald"
 
 age:
   description: Age
   type: uint8
-  default: 0
+  value: 0
 
 logLevel:
   env: LOG_LEVEL
   type: enum
-  default: DEBUG
+  value: DEBUG
   description: Description of the variable
   enum:
     - DEBUG
@@ -28,7 +28,7 @@ logLevel:
 project:
   type: struct
   description: Project configuration
-  values:
+  value:
     name:
       type: string
       value: my-service-api
@@ -49,7 +49,7 @@ project:
 
 grpc:
   type: struct
-  values:
+  value:
     host:
       type: string
       value: 127.0.0.1

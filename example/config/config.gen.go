@@ -6,31 +6,28 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"reflect"
-	"strconv"
 	"syscall"
-	"time"
 
+	"github.com/evald24/go-gen-config/pkg/helpers"
 	"gopkg.in/yaml.v3"
 )
 
-type config struct {
-	// Debug - Debug mode
+type config struct {	// Debug - Debug mode
 	Debug	bool	`yaml:"debug" env:"DEBUG"`	// Default: true
-
 	// Name - App name
 	Name	string	`yaml:"name"`	// Default: Evald
-
 	// Age - Age
 	Age	uint8	`yaml:"age"`	// Default: 0
-
 	// LogLevel - Description of the variable
 	LogLevel	string	`yaml:"logLevel" env:"LOG_LEVEL"`	// Default: DEBUG
+	// Project - Project configuration
+	Project	StructProject	`yaml:"project"`	// Default: map[description:map[description:Description of the project type:string value:My service description] environment:map[enum:[DEV STG PROD] env:PROJECT_ENV type:enum value:DEV] name:map[description:Name of the project type:string value:my-service-api] title:map[description:Title of the project type:string value:My service API]]
+
+	Grpc	StructGrpc	`yaml:"grpc"`	// Default: map[host:map[env:GRPC_HOST type:string value:127.0.0.1] maxConnectionAge:map[description:MaxConnectionAge is a duration for the maximum amount of time a connection may exist before it will be closed by sending a GoAway. type:int64 value:5] maxConnectionAgeGrace:map[description:MaxConnectionAgeGrace is an additive period after MaxConnectionAge after which the connection will be forcibly closed. type:int64 value:5] maxConnectionIdle:map[description:MaxConnectionIdle is a duration for the amount of time after which an idle connection would be closed by sending a GoAway. type:int64 value:5] port:map[env:GRPC_PORT type:uint16 value:50051] time:map[description:After a duration of this time if the server doesn't see any activity it pings the client to see if the transport is still alive. type:int64 value:15] timeout:map[description:After having pinged for keepalive check, the server waits for a duration of Timeout and if no activity is seen even after that the connection is closed type:int64 value:15]]
 }
 
 // GetDebug - Debug mode
 func GetDebug() bool {
-
 	return cfg.Debug
 }
 
@@ -44,20 +41,16 @@ func GetName() string {
 
 // GetAge - Age
 func GetAge() uint8 {
-
 	return cfg.Age
 }
 
-// Enum LogLevel
+// Type - Description of the variable
 type EnumLogLevel = uint8
 
 const (
 	LogLevelDebug	EnumLogLevel	= iota
-
 	LogLevelInfo
-
 	LogLevelWarning
-
 	LogLevelError
 )
 
@@ -77,6 +70,44 @@ func GetLogLevel() EnumLogLevel {
 	}
 }
 
+// GetProject - Project configuration
+func GetProject() StructProject {
+	return cfg.Project
+}
+
+type StructProject struct {
+	// Description - Description of the project
+	Description	string	`yaml:"description"`	// Default: My service description
+	// Environment -
+	Environment	string	`yaml:"environment" env:"PROJECT_ENV"`	// Default: DEV
+	// Name - Name of the project
+	Name	string	`yaml:"name"`	// Default: my-service-api
+	// Title - Title of the project
+	Title	string	`yaml:"title"`	// Default: My service API
+}
+
+// GetGrpc - ...
+func GetGrpc() StructGrpc {
+	return cfg.Grpc
+}
+
+type StructGrpc struct {
+	// Host -
+	Host	string	`yaml:"host" env:"GRPC_HOST"`	// Default: 127.0.0.1
+	// Port -
+	Port	uint16	`yaml:"port" env:"GRPC_PORT"`	// Default: 50051
+	// MaxConnectionIdle - MaxConnectionIdle is a duration for the amount of time after which an idle connection would be closed by sending a GoAway.
+	MaxConnectionIdle	int64	`yaml:"maxConnectionIdle"`	// Default: 5
+	// MaxConnectionAge - MaxConnectionAge is a duration for the maximum amount of time a connection may exist before it will be closed by sending a GoAway.
+	MaxConnectionAge	int64	`yaml:"maxConnectionAge"`	// Default: 5
+	// MaxConnectionAgeGrace - MaxConnectionAgeGrace is an additive period after MaxConnectionAge after which the connection will be forcibly closed.
+	MaxConnectionAgeGrace	int64	`yaml:"maxConnectionAgeGrace"`	// Default: 5
+	// Time - After a duration of this time if the server doesn't see any activity it pings the client to see if the transport is still alive.
+	Time	int64	`yaml:"time"`	// Default: 15
+	// Timeout - After having pinged for keepalive check, the server waits for a duration of Timeout and if no activity is seen even after that the connection is closed
+	Timeout	int64	`yaml:"timeout"`	// Default: 15
+}
+
 var fileConfig string
 var cfg *config
 
@@ -93,16 +124,10 @@ func Init(configPath string) error {
 	go func() {
 		for {
 			<-hotReload
-			fmt.Printf("Hot reloading configuration ...\n")
-			if err := UpdateConfig(); err != nil {
-				fmt.Printf("Error when hot-reloading the configuration: %v\n", err)
-				return
-			}
-			fmt.Printf("Config hot reloading was successful\n")
+			UpdateConfig()
 		}
 	}()
 
-	fmt.Printf("Config initialization was successful\n")
 	return nil
 }
 
@@ -120,89 +145,5 @@ func UpdateConfig() error {
 	}
 
 	// read environment and replace
-	readEnvAndSet(reflect.ValueOf(cfg))
-	return nil
-}
-
-// readEnvAndSet - Sets config from environment values.
-func readEnvAndSet(v reflect.Value) {
-	if v.Kind() == reflect.Ptr && !v.IsNil() {
-		v = v.Elem()
-	}
-
-	t := v.Type()
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		if field.Type.Kind() == reflect.Struct {
-			readEnvAndSet(v.Field(i))
-		} else if tag := field.Tag.Get("env"); tag != "" {
-			if value := os.Getenv(tag); value != "" {
-				if err := setValue(v.Field(i), value); err != nil {
-					fmt.Printf("Failed to set environment value for \"%s\"", field.Name)
-				}
-			}
-		}
-	}
-}
-
-func setValue(field reflect.Value, value string) error {
-	valueType := field.Type()
-	switch valueType.Kind() {
-	// set string value
-	case reflect.String:
-		field.SetString(value)
-
-	// set boolean value
-	case reflect.Bool:
-		b, err := strconv.ParseBool(value)
-		if err != nil {
-			return err
-		}
-		field.SetBool(b)
-
-	// set integer (or time) value
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if field.Kind() == reflect.Int64 && valueType.PkgPath() == "time" && valueType.Name() == "Duration" {
-			// try to parse time
-			d, err := time.ParseDuration(value)
-			if err != nil {
-				return err
-			}
-			field.SetInt(int64(d))
-		} else {
-			// parse regular integer
-			number, err := strconv.ParseInt(value, 0, valueType.Bits())
-			if err != nil {
-				return err
-			}
-			field.SetInt(number)
-		}
-
-	// set unsigned integer value
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		number, err := strconv.ParseUint(value, 0, valueType.Bits())
-		if err != nil {
-			return err
-		}
-		field.SetUint(number)
-
-	// set floating point value
-	case reflect.Float32, reflect.Float64:
-		number, err := strconv.ParseFloat(value, valueType.Bits())
-		if err != nil {
-			return err
-		}
-		field.SetFloat(number)
-
-	// unsupported types
-	case reflect.Map, reflect.Ptr,
-		reflect.Complex64, reflect.Interface,
-		reflect.Invalid, reflect.Slice, reflect.Func,
-		reflect.Array, reflect.Chan, reflect.Complex128,
-		reflect.Struct, reflect.Uintptr, reflect.UnsafePointer:
-	default:
-		return fmt.Errorf("unsupported type: %v", valueType.Kind())
-	}
-
-	return nil
+	return helpers.ReadEnvAndSet(cfg)
 }

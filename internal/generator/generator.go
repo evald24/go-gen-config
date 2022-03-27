@@ -46,22 +46,19 @@ func (g *generator) readTemplate() error {
 	return nil
 }
 
-func (g *generator) getParams() ([]ConfigItem, error) {
-	if err := g.readTemplate(); err != nil {
-		return nil, err
-	}
+func getParams(cfgMap map[string]interface{}) ([]ConfigItem, error) {
 
-	params := make([]ConfigItem, 0, len(g.cfgMap))
-	for k, v := range g.cfgMap {
-		value, _ := v.(map[string]interface{})
-		// if !ok {
-		// 	log.Fatal("value must be a map[string]interface{}")
-		// }
+	params := make([]ConfigItem, 0, len(cfgMap))
+	for k, v := range cfgMap {
+		value, ok := v.(map[string]interface{})
+		if !ok {
+			log.Fatal("value must be a map[string]interface{}")
+		}
 
 		valueType := helpers.GetString(value, "type")
 		description := helpers.GetString(value, "description")
 		name := strcase.ToCamel(k)
-		defaultValue := helpers.GetString(value, "default")
+		defaultValue := helpers.GetString(value, "value")
 		env := helpers.GetString(value, "env")
 
 		envTag := ""
@@ -107,6 +104,27 @@ func (g *generator) getParams() ([]ConfigItem, error) {
 				Default:     defaultValue,
 			})
 		}
+
+		if valueType == "struct" {
+			constType := strcase.ToCamel(fmt.Sprintf("%v_%v", valueType, name))
+
+			items, err := getParams(value["value"].(map[string]interface{}))
+			if err != nil {
+				return nil, err
+			}
+
+			params = append(params, ConfigItem{
+				Key:         k,
+				Name:        name,
+				Description: description,
+				Type:        constType,
+				Tags:        tags,
+				IsStruct:    true,
+				Env:         env,
+				Default:     defaultValue,
+				Items:       items,
+			})
+		}
 	}
 
 	return params, nil
@@ -128,13 +146,17 @@ var baseTypes = []string{
 }
 
 func (g *generator) Generate() error {
-	params, err := g.getParams()
+	if err := g.readTemplate(); err != nil {
+		return err
+	}
+
+	params, err := getParams(g.cfgMap)
 	if err != nil {
 		return err
 	}
 
 	// Generate code
-	bufCode, err := g.buildTemplate(TemplateCode, params)
+	bufCode, err := g.buildTemplate(TemplateConfig, params)
 	if err != nil {
 		return err
 	}
@@ -158,7 +180,13 @@ func (g *generator) Generate() error {
 
 	// Generate config file
 
-	bufConfig, err := g.buildTemplate(TemplateConfig, params)
+	if g.configPath == "" {
+		return nil
+	}
+
+	config := getConfig(g.cfgMap)
+
+	bytes, err := yaml.Marshal(config)
 	if err != nil {
 		return err
 	}
@@ -169,7 +197,24 @@ func (g *generator) Generate() error {
 	}
 	defer configFile.Close()
 
-	configFile.Write(bufConfig.Bytes())
+	if _, err := configFile.Write(bytes); err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func getConfig(cfg map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+
+	for k, v := range cfg {
+		value, _ := v.(map[string]interface{})
+		if value["type"] == "struct" {
+			result[k] = getConfig(value["value"].(map[string]interface{}))
+		} else if value["value"] != nil {
+			result[k] = value["value"]
+		}
+	}
+
+	return result
 }
