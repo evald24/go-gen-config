@@ -10,7 +10,14 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/cmd/go-gen-config/main.go",
-      "args": ["-t", "${workspaceFolder}/example/config.template.yaml", "-o", "${workspaceFolder}/example/config.gen.go"],
+      "args": [
+        "-t",
+        "${workspaceFolder}/example/config.template.yaml",
+        "-o",
+        "${workspaceFolder}/example/config/config.gen.go",
+        "-c",
+        "${workspaceFolder}/example/config/config.yaml"
+      ],
       "buildFlags": ""
     }
   ]

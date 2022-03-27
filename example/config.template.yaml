@@ -46,6 +46,7 @@ project:
       value: DEV
       env: PROJECT_ENV
       enum: [DEV, STG, PROD]
+      descriptions: ["Development", "Staging", "Production"]
 
 grpc:
   type: struct

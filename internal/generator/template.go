@@ -17,52 +17,57 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-{{ define "get" }}
-// Get{{.Name}} - {{if .Description }}{{.Description}}{{else}}...{{end}}
-func Get{{.Name}}() {{.Type}} { {{if eq .Type "string"}}if cfg.{{.Name}} == "" {
-		return "{{.Default}}"
-	}{{else if .IsNumber}}if cfg.{{.Name}} == 0 {
-	return {{.Default}}
-	}{{end}}{{if .IsEnum}} switch cfg.{{.Name}} { {{range $j, $enum :=.Enums}}
-		case "{{$enum.Value}}":
-			return {{$j}} {{end}}
-		 default:
-			 return 0
-	}{{else}}
-	return cfg.{{.Name}}{{end}}
+{{define "struct_item"}}{{.Name}} {{if .IsEnum}}{{.Type}}{{else}}{{.Type}}{{end}}{{.Tags}}{{if .Default}} // Default: {{.Default}}{{end}}{{end}}
+
+// Conifg - Basic structure with configuration
+type Config struct {
+{{range .}}  // {{.Name}} - {{.Description}}
+	{{template "struct_item" .}}
+{{end}}}
+
+
+
+{{define "enum"}}{{$item := .}}
+	// {{.Type}} - {{.Description}}
+	type {{.Type}} = string
+	const (
+		{{range $j, $enum := .Enums}}// {{.Name}} - {{$item.Description}}
+		{{$enum.Name}} {{if eq $j 0}} {{$item.Type}} = "{{$enum.Value}}"{{else}} = "{{$enum.Value}}"{{end}}
+	{{end}})
+{{end}}
+
+{{define "struct"}}
+	// {{.Type}} - {{.Description}}
+	type {{.Type}} struct {
+	{{range .Items}}// {{.Name}} - {{.Description}}
+		{{template "struct_item" .}}
+	{{end}}}
+
+	{{template "gen" .Items}}
+{{end}}
+
+{{define "gen"}}
+	{{range .}}
+		{{if .IsEnum}}
+			{{template "enum" .}}
+		{{end}}
+		{{if .IsStruct}}
+			{{template "struct" .}}
+		{{end}}
+	{{end}}
+{{end}}
+
+{{template "gen" .}}
+
+// GetConfig - get the configuration
+func GetConfig() Config {
+	return *cfg
 }
-{{ end }}
-
-{{ define "struct" }}
-type {{.Type}} struct {
-	{{ range .Items }}// {{.Name}} - {{.Description}}
-	{{.Name}} {{if .IsEnum}}string{{else}}{{.Type}}{{end}}{{.Tags}} // Default: {{.Default}}
-{{ end }}}
-
-{{ end }}
-
-type config struct { {{ range . }}{{if .Description }}// {{.Name}} - {{.Description}}{{end}}
-	{{.Name}} {{if .IsEnum}}string{{else}}{{.Type}}{{end}}{{.Tags}} // Default: {{.Default}}
-{{ end }}}
-
-{{ range $i, $item := . }} {{if .IsEnum}}
-// Type - {{.Description}}
-type {{.Type}} = uint8
-const ({{ range $j, $enum := .Enums}}{{$enum.Name}} {{if eq $j 0}} {{$item.Type}} = iota {{end}}
-{{end}})
-{{ end }}
-
-{{ template "get" $item }}
-
-{{if $item.IsStruct }}
-{{ template "struct" $item }}
-{{ end }}
-{{ end }}
-
 
 var fileConfig string
-var cfg *config
+var cfg *Config
 
+// Init - initializing the configuration
 func Init(configPath string) error {
 	fileConfig = configPath
 
@@ -83,7 +88,7 @@ func Init(configPath string) error {
 	return nil
 }
 
-// UpdateConfig - Updates the config by rereading.
+// UpdateConfig - Updates the configuration by rereading
 func UpdateConfig() error {
 	file, err := os.Open(fileConfig)
 	if err != nil {

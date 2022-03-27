@@ -8,11 +8,13 @@ import (
 	"go/token"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/evald24/go-gen-config/internal/helpers"
 	"github.com/iancoleman/strcase"
+	"golang.org/x/sys/unix"
 	"gopkg.in/yaml.v3"
 )
 
@@ -46,7 +48,7 @@ func (g *generator) readTemplate() error {
 	return nil
 }
 
-func getParams(cfgMap map[string]interface{}) ([]ConfigItem, error) {
+func getParams(cfgMap map[string]interface{}, structName string) ([]ConfigItem, error) {
 
 	params := make([]ConfigItem, 0, len(cfgMap))
 	for k, v := range cfgMap {
@@ -61,12 +63,15 @@ func getParams(cfgMap map[string]interface{}) ([]ConfigItem, error) {
 		defaultValue := helpers.GetString(value, "value")
 		env := helpers.GetString(value, "env")
 
-		envTag := ""
+		tags := fmt.Sprintf("yaml:\"%s\"", k)
 		if len(env) > 0 {
-			envTag = fmt.Sprintf(" env:\"%s\"", env)
+			tags += fmt.Sprintf(" env:\"%s\"", env)
+		}
+		if defaultValue != "" && valueType != "struct" {
+			tags += fmt.Sprintf(" default:\"%s\"", defaultValue)
 		}
 
-		tags := fmt.Sprintf("`yaml:\"%s\"%s`", k, envTag)
+		tags = fmt.Sprintf("`%s`", tags)
 
 		if helpers.Contains(baseTypes, valueType) {
 			params = append(params, ConfigItem{
@@ -81,13 +86,12 @@ func getParams(cfgMap map[string]interface{}) ([]ConfigItem, error) {
 		}
 
 		if valueType == "enum" {
-			constType := strcase.ToCamel(fmt.Sprintf("%v_%v", valueType, name))
 			enums := helpers.GetEnum(value)
 			enumKV := make([]EnumKV, 0, len(enums))
 
 			for _, v := range enums {
 				enumKV = append(enumKV, EnumKV{
-					Name:  strcase.ToCamel(name + "_" + strings.ToLower(v)),
+					Name:  strcase.ToCamel(structName + "_" + name + "_" + strings.ToLower(v)),
 					Value: v,
 				})
 			}
@@ -96,7 +100,7 @@ func getParams(cfgMap map[string]interface{}) ([]ConfigItem, error) {
 				Key:         k,
 				Name:        name,
 				Description: description,
-				Type:        constType,
+				Type:        strcase.ToCamel(valueType + "_" + structName + "_" + name),
 				Tags:        tags,
 				IsEnum:      true,
 				Enums:       enumKV,
@@ -106,9 +110,7 @@ func getParams(cfgMap map[string]interface{}) ([]ConfigItem, error) {
 		}
 
 		if valueType == "struct" {
-			constType := strcase.ToCamel(fmt.Sprintf("%v_%v", valueType, name))
-
-			items, err := getParams(value["value"].(map[string]interface{}))
+			items, err := getParams(value["value"].(map[string]interface{}), name)
 			if err != nil {
 				return nil, err
 			}
@@ -117,11 +119,10 @@ func getParams(cfgMap map[string]interface{}) ([]ConfigItem, error) {
 				Key:         k,
 				Name:        name,
 				Description: description,
-				Type:        constType,
+				Type:        strcase.ToCamel(valueType + "_" + structName + "_" + name),
 				Tags:        tags,
 				IsStruct:    true,
 				Env:         env,
-				Default:     defaultValue,
 				Items:       items,
 			})
 		}
@@ -150,7 +151,7 @@ func (g *generator) Generate() error {
 		return err
 	}
 
-	params, err := getParams(g.cfgMap)
+	params, err := getParams(g.cfgMap, "")
 	if err != nil {
 		return err
 	}
@@ -171,11 +172,21 @@ func (g *generator) Generate() error {
 	if err != nil {
 		return fmt.Errorf("create file: %v", err)
 	}
-	defer outFile.Close()
 
 	err = printer.Fprint(outFile, fset, astOutFile)
 	if err != nil {
 		log.Fatalf("print file: %v", err)
+	}
+
+	dir, err := helpers.GoRoot()
+	if err != nil {
+		return err
+	}
+	outFile.Close()
+
+	p := filepath.Join(dir, "bin/gofmt")
+	if err := unix.Exec(p, []string{"-s", "-w", g.outputPath}, os.Environ()); err != nil {
+		return fmt.Errorf("cannot execute gofmt: %v", err)
 	}
 
 	// Generate config file
@@ -186,7 +197,7 @@ func (g *generator) Generate() error {
 
 	config := getConfig(g.cfgMap)
 
-	bytes, err := yaml.Marshal(config)
+	bytesConfig, err := yaml.Marshal(config)
 	if err != nil {
 		return err
 	}
@@ -197,7 +208,7 @@ func (g *generator) Generate() error {
 	}
 	defer configFile.Close()
 
-	if _, err := configFile.Write(bytes); err != nil {
+	if _, err := configFile.Write(bytesConfig); err != nil {
 		return err
 	}
 

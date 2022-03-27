@@ -12,105 +12,87 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type config struct {	// Debug - Debug mode
-	Debug	bool	`yaml:"debug" env:"DEBUG"`	// Default: true
+// Conifg - Basic structure with configuration
+type Config struct {
+	// Debug - Debug mode
+	Debug bool `yaml:"debug" env:"DEBUG" default:"true"` // Default: true
 	// Name - App name
-	Name	string	`yaml:"name"`	// Default: Evald
+	Name string `yaml:"name" default:"Evald"` // Default: Evald
 	// Age - Age
-	Age	uint8	`yaml:"age"`	// Default: 0
+	Age uint8 `yaml:"age" default:"0"` // Default: 0
 	// LogLevel - Description of the variable
-	LogLevel	string	`yaml:"logLevel" env:"LOG_LEVEL"`	// Default: DEBUG
+	LogLevel EnumLogLevel `yaml:"logLevel" env:"LOG_LEVEL" default:"DEBUG"` // Default: DEBUG
 	// Project - Project configuration
-	Project	StructProject	`yaml:"project"`	// Default: map[description:map[description:Description of the project type:string value:My service description] environment:map[enum:[DEV STG PROD] env:PROJECT_ENV type:enum value:DEV] name:map[description:Name of the project type:string value:my-service-api] title:map[description:Title of the project type:string value:My service API]]
-
-	Grpc	StructGrpc	`yaml:"grpc"`	// Default: map[host:map[env:GRPC_HOST type:string value:127.0.0.1] maxConnectionAge:map[description:MaxConnectionAge is a duration for the maximum amount of time a connection may exist before it will be closed by sending a GoAway. type:int64 value:5] maxConnectionAgeGrace:map[description:MaxConnectionAgeGrace is an additive period after MaxConnectionAge after which the connection will be forcibly closed. type:int64 value:5] maxConnectionIdle:map[description:MaxConnectionIdle is a duration for the amount of time after which an idle connection would be closed by sending a GoAway. type:int64 value:5] port:map[env:GRPC_PORT type:uint16 value:50051] time:map[description:After a duration of this time if the server doesn't see any activity it pings the client to see if the transport is still alive. type:int64 value:15] timeout:map[description:After having pinged for keepalive check, the server waits for a duration of Timeout and if no activity is seen even after that the connection is closed type:int64 value:15]]
+	Project StructProject `yaml:"project"`
+	// Grpc -
+	Grpc StructGrpc `yaml:"grpc"`
 }
 
-// GetDebug - Debug mode
-func GetDebug() bool {
-	return cfg.Debug
-}
-
-// GetName - App name
-func GetName() string {
-	if cfg.Name == "" {
-		return "Evald"
-	}
-	return cfg.Name
-}
-
-// GetAge - Age
-func GetAge() uint8 {
-	return cfg.Age
-}
-
-// Type - Description of the variable
-type EnumLogLevel = uint8
+// EnumLogLevel - Description of the variable
+type EnumLogLevel = string
 
 const (
-	LogLevelDebug	EnumLogLevel	= iota
-	LogLevelInfo
-	LogLevelWarning
-	LogLevelError
+	// LogLevelDebug - Description of the variable
+	LogLevelDebug EnumLogLevel = "DEBUG"
+	// LogLevelInfo - Description of the variable
+	LogLevelInfo = "INFO"
+	// LogLevelWarning - Description of the variable
+	LogLevelWarning = "WARNING"
+	// LogLevelError - Description of the variable
+	LogLevelError = "ERROR"
 )
 
-// GetLogLevel - Description of the variable
-func GetLogLevel() EnumLogLevel {
-	switch cfg.LogLevel {
-	case "DEBUG":
-		return 0
-	case "INFO":
-		return 1
-	case "WARNING":
-		return 2
-	case "ERROR":
-		return 3
-	default:
-		return 0
-	}
-}
-
-// GetProject - Project configuration
-func GetProject() StructProject {
-	return cfg.Project
-}
-
+// StructProject - Project configuration
 type StructProject struct {
 	// Description - Description of the project
-	Description	string	`yaml:"description"`	// Default: My service description
+	Description string `yaml:"description" default:"My service description"` // Default: My service description
 	// Environment -
-	Environment	string	`yaml:"environment" env:"PROJECT_ENV"`	// Default: DEV
+	Environment EnumProjectEnvironment `yaml:"environment" env:"PROJECT_ENV" default:"DEV"` // Default: DEV
 	// Name - Name of the project
-	Name	string	`yaml:"name"`	// Default: my-service-api
+	Name string `yaml:"name" default:"my-service-api"` // Default: my-service-api
 	// Title - Title of the project
-	Title	string	`yaml:"title"`	// Default: My service API
+	Title string `yaml:"title" default:"My service API"` // Default: My service API
 }
 
-// GetGrpc - ...
-func GetGrpc() StructGrpc {
-	return cfg.Grpc
-}
+// EnumProjectEnvironment -
+type EnumProjectEnvironment = string
 
+const (
+	// ProjectEnvironmentDev -
+	ProjectEnvironmentDev EnumProjectEnvironment = "DEV"
+	// ProjectEnvironmentStg -
+	ProjectEnvironmentStg = "STG"
+	// ProjectEnvironmentProd -
+	ProjectEnvironmentProd = "PROD"
+)
+
+// StructGrpc -
 type StructGrpc struct {
-	// Host -
-	Host	string	`yaml:"host" env:"GRPC_HOST"`	// Default: 127.0.0.1
-	// Port -
-	Port	uint16	`yaml:"port" env:"GRPC_PORT"`	// Default: 50051
-	// MaxConnectionIdle - MaxConnectionIdle is a duration for the amount of time after which an idle connection would be closed by sending a GoAway.
-	MaxConnectionIdle	int64	`yaml:"maxConnectionIdle"`	// Default: 5
-	// MaxConnectionAge - MaxConnectionAge is a duration for the maximum amount of time a connection may exist before it will be closed by sending a GoAway.
-	MaxConnectionAge	int64	`yaml:"maxConnectionAge"`	// Default: 5
-	// MaxConnectionAgeGrace - MaxConnectionAgeGrace is an additive period after MaxConnectionAge after which the connection will be forcibly closed.
-	MaxConnectionAgeGrace	int64	`yaml:"maxConnectionAgeGrace"`	// Default: 5
-	// Time - After a duration of this time if the server doesn't see any activity it pings the client to see if the transport is still alive.
-	Time	int64	`yaml:"time"`	// Default: 15
 	// Timeout - After having pinged for keepalive check, the server waits for a duration of Timeout and if no activity is seen even after that the connection is closed
-	Timeout	int64	`yaml:"timeout"`	// Default: 15
+	Timeout int64 `yaml:"timeout" default:"15"` // Default: 15
+	// Host -
+	Host string `yaml:"host" env:"GRPC_HOST" default:"127.0.0.1"` // Default: 127.0.0.1
+	// Port -
+	Port uint16 `yaml:"port" env:"GRPC_PORT" default:"50051"` // Default: 50051
+	// MaxConnectionIdle - MaxConnectionIdle is a duration for the amount of time after which an idle connection would be closed by sending a GoAway.
+	MaxConnectionIdle int64 `yaml:"maxConnectionIdle" default:"5"` // Default: 5
+	// MaxConnectionAge - MaxConnectionAge is a duration for the maximum amount of time a connection may exist before it will be closed by sending a GoAway.
+	MaxConnectionAge int64 `yaml:"maxConnectionAge" default:"5"` // Default: 5
+	// MaxConnectionAgeGrace - MaxConnectionAgeGrace is an additive period after MaxConnectionAge after which the connection will be forcibly closed.
+	MaxConnectionAgeGrace int64 `yaml:"maxConnectionAgeGrace" default:"5"` // Default: 5
+	// Time - After a duration of this time if the server doesn't see any activity it pings the client to see if the transport is still alive.
+	Time int64 `yaml:"time" default:"15"` // Default: 15
+}
+
+// GetConfig - get the configuration
+func GetConfig() Config {
+	return *cfg
 }
 
 var fileConfig string
-var cfg *config
+var cfg *Config
 
+// Init - initializing the configuration
 func Init(configPath string) error {
 	fileConfig = configPath
 
@@ -131,7 +113,7 @@ func Init(configPath string) error {
 	return nil
 }
 
-// UpdateConfig - Updates the config by rereading.
+// UpdateConfig - Updates the configuration by rereading
 func UpdateConfig() error {
 	file, err := os.Open(fileConfig)
 	if err != nil {

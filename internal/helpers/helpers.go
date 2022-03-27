@@ -1,8 +1,10 @@
 package helpers
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -37,4 +39,17 @@ func CreateFile(p string) (*os.File, error) {
 		return nil, err
 	}
 	return os.Create(p)
+}
+
+func GoRoot() (string, error) {
+	cmd := exec.Command("go", "env", "GOROOT")
+	buf, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("go env: %v", err)
+	}
+	if bytes.IndexByte(buf, '\n') != len(buf)-1 {
+		return "", fmt.Errorf("expected single line from go env: %q", buf)
+	}
+	buf = buf[:len(buf)-1]
+	return string(buf), nil
 }
