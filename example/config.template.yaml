@@ -15,10 +15,10 @@ age:
   value: 0
 
 logLevel:
-  env: LOG_LEVEL
-  type: enum
-  value: DEBUG
   description: Description of the variable
+  type: enum
+  env: LOG_LEVEL
+  value: DEBUG
   enum:
     - DEBUG
     - INFO
@@ -46,7 +46,6 @@ project:
       value: DEV
       env: PROJECT_ENV
       enum: [DEV, STG, PROD]
-      descriptions: ["Development", "Staging", "Production"]
 
 grpc:
   type: struct

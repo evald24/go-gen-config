@@ -13,5 +13,6 @@ func main() {
 	}
 
 	fmt.Printf("config: %+v\n", config.GetConfig())
-
+	project := config.GetConfig().Project
+	fmt.Printf("project name: %s", project.Name)
 }

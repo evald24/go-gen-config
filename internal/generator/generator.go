@@ -172,21 +172,11 @@ func (g *generator) Generate() error {
 	if err != nil {
 		return fmt.Errorf("create file: %v", err)
 	}
+	defer outFile.Close()
 
 	err = printer.Fprint(outFile, fset, astOutFile)
 	if err != nil {
 		log.Fatalf("print file: %v", err)
-	}
-
-	dir, err := helpers.GoRoot()
-	if err != nil {
-		return err
-	}
-	outFile.Close()
-
-	p := filepath.Join(dir, "bin/gofmt")
-	if err := unix.Exec(p, []string{"-s", "-w", g.outputPath}, os.Environ()); err != nil {
-		return fmt.Errorf("cannot execute gofmt: %v", err)
 	}
 
 	// Generate config file
@@ -210,6 +200,18 @@ func (g *generator) Generate() error {
 
 	if _, err := configFile.Write(bytesConfig); err != nil {
 		return err
+	}
+
+	// Formatting the code
+
+	dir, err := helpers.GoRoot()
+	if err != nil {
+		return err
+	}
+
+	p := filepath.Join(dir, "bin/gofmt")
+	if err := unix.Exec(p, []string{"-s", "-w", g.outputPath}, os.Environ()); err != nil {
+		return fmt.Errorf("cannot execute gofmt: %v", err)
 	}
 
 	return nil

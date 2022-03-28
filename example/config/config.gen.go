@@ -14,18 +14,18 @@ import (
 
 // Conifg - Basic structure with configuration
 type Config struct {
-	// Debug - Debug mode
-	Debug bool `yaml:"debug" env:"DEBUG" default:"true"` // Default: true
-	// Name - App name
-	Name string `yaml:"name" default:"Evald"` // Default: Evald
-	// Age - Age
-	Age uint8 `yaml:"age" default:"0"` // Default: 0
 	// LogLevel - Description of the variable
 	LogLevel EnumLogLevel `yaml:"logLevel" env:"LOG_LEVEL" default:"DEBUG"` // Default: DEBUG
 	// Project - Project configuration
 	Project StructProject `yaml:"project"`
 	// Grpc -
 	Grpc StructGrpc `yaml:"grpc"`
+	// Debug - Debug mode
+	Debug bool `yaml:"debug" env:"DEBUG" default:"true"` // Default: true
+	// Name - App name
+	Name string `yaml:"name" default:"Evald"` // Default: Evald
+	// Age - Age
+	Age uint8 `yaml:"age" default:"0"` // Default: 0
 }
 
 // EnumLogLevel - Description of the variable
@@ -44,14 +44,14 @@ const (
 
 // StructProject - Project configuration
 type StructProject struct {
-	// Description - Description of the project
-	Description string `yaml:"description" default:"My service description"` // Default: My service description
-	// Environment -
-	Environment EnumProjectEnvironment `yaml:"environment" env:"PROJECT_ENV" default:"DEV"` // Default: DEV
 	// Name - Name of the project
 	Name string `yaml:"name" default:"my-service-api"` // Default: my-service-api
 	// Title - Title of the project
 	Title string `yaml:"title" default:"My service API"` // Default: My service API
+	// Description - Description of the project
+	Description string `yaml:"description" default:"My service description"` // Default: My service description
+	// Environment -
+	Environment EnumProjectEnvironment `yaml:"environment" env:"PROJECT_ENV" default:"DEV"` // Default: DEV
 }
 
 // EnumProjectEnvironment -
@@ -68,8 +68,6 @@ const (
 
 // StructGrpc -
 type StructGrpc struct {
-	// Timeout - After having pinged for keepalive check, the server waits for a duration of Timeout and if no activity is seen even after that the connection is closed
-	Timeout int64 `yaml:"timeout" default:"15"` // Default: 15
 	// Host -
 	Host string `yaml:"host" env:"GRPC_HOST" default:"127.0.0.1"` // Default: 127.0.0.1
 	// Port -
@@ -82,6 +80,8 @@ type StructGrpc struct {
 	MaxConnectionAgeGrace int64 `yaml:"maxConnectionAgeGrace" default:"5"` // Default: 5
 	// Time - After a duration of this time if the server doesn't see any activity it pings the client to see if the transport is still alive.
 	Time int64 `yaml:"time" default:"15"` // Default: 15
+	// Timeout - After having pinged for keepalive check, the server waits for a duration of Timeout and if no activity is seen even after that the connection is closed
+	Timeout int64 `yaml:"timeout" default:"15"` // Default: 15
 }
 
 // GetConfig - get the configuration
