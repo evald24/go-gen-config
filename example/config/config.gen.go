@@ -5,8 +5,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/evald24/go-gen-config/pkg/helpers"
 	"gopkg.in/yaml.v3"
@@ -64,12 +62,6 @@ const (
 
 // StructGrpc -
 type StructGrpc struct {
-	// Timeout - After having pinged for keepalive check, the server waits for a duration of Timeout and if no activity is seen even after that the connection is closed
-	Timeout int64 `yaml:"timeout" default:"15"`
-	// Host -
-	Host string `yaml:"host" env:"GRPC_HOST" default:"127.0.0.1"`
-	// Port -
-	Port uint16 `yaml:"port" env:"GRPC_PORT" default:"50051"`
 	// MaxConnectionIdle - MaxConnectionIdle is a duration for the amount of time after which an idle connection would be closed by sending a GoAway.
 	MaxConnectionIdle int64 `yaml:"maxConnectionIdle" default:"5"`
 	// MaxConnectionAge - MaxConnectionAge is a duration for the maximum amount of time a connection may exist before it will be closed by sending a GoAway.
@@ -78,6 +70,12 @@ type StructGrpc struct {
 	MaxConnectionAgeGrace int64 `yaml:"maxConnectionAgeGrace" default:"5"`
 	// Time - After a duration of this time if the server doesn't see any activity it pings the client to see if the transport is still alive.
 	Time int64 `yaml:"time" default:"15"`
+	// Timeout - After having pinged for keepalive check, the server waits for a duration of Timeout and if no activity is seen even after that the connection is closed
+	Timeout int64 `yaml:"timeout" default:"15"`
+	// Host -
+	Host string `yaml:"host" env:"GRPC_HOST" default:"127.0.0.1"`
+	// Port -
+	Port uint16 `yaml:"port" env:"GRPC_PORT" default:"50051"`
 }
 
 // GetConfig - get the configuration
@@ -92,19 +90,13 @@ var cfg *Config
 func Init(configPath string) error {
 	fileConfig = configPath
 
+	if cfg != nil {
+		return fmt.Errorf("The configuration has already been initialized")
+	}
+
 	if err := UpdateConfig(); err != nil {
 		return fmt.Errorf("Configuration initialization failed: %v", err)
 	}
-
-	hotReload := make(chan os.Signal, 1)
-	signal.Notify(hotReload, syscall.SIGHUP)
-
-	go func() {
-		for {
-			<-hotReload
-			UpdateConfig()
-		}
-	}()
 
 	return nil
 }

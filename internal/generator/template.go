@@ -10,8 +10,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/evald24/go-gen-config/pkg/helpers"
 	"gopkg.in/yaml.v3"
@@ -71,19 +69,13 @@ var cfg *Config
 func Init(configPath string) error {
 	fileConfig = configPath
 
+	if cfg != nil {
+		return fmt.Errorf("The configuration has already been initialized")
+	}
+
 	if err := UpdateConfig(); err != nil {
 		return fmt.Errorf("Configuration initialization failed: %v", err)
 	}
-
-	hotReload := make(chan os.Signal, 1)
-	signal.Notify(hotReload, syscall.SIGHUP)
-
-	go func() {
-		for {
-			<-hotReload
-			UpdateConfig()
-		}
-	}()
 
 	return nil
 }
