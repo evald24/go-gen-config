@@ -1,7 +1,5 @@
 # Go generate configuration
 
-## Overview
-
 Convenient configuration generator based on yaml template
 
 ## Install
