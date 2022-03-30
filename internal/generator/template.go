@@ -17,7 +17,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-{{define "struct_item"}}{{.Name}} {{if .IsEnum}}{{.Type}}{{else}}{{.Type}}{{end}}{{.Tags}}{{if .Default}} // Default: {{.Default}}{{end}}{{end}}
+{{define "struct_item"}}{{.Name}} {{if .IsEnum}}{{.Type}}{{else}}{{.Type}}{{end}}{{.Tags}}{{end}}
 
 // Conifg - Basic structure with configuration
 type Config struct {

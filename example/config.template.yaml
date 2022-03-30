@@ -4,16 +4,6 @@ debug:
   env: DEBUG
   value: true
 
-name:
-  description: App name
-  type: string
-  value: "Evald"
-
-age:
-  description: Age
-  type: uint8
-  value: 0
-
 logLevel:
   description: Description of the variable
   type: enum
@@ -27,25 +17,26 @@ logLevel:
 
 project:
   type: struct
-  description: Project configuration
+  description: Project information
   value:
     name:
       type: string
-      value: my-service-api
+      value: example-service-api
       description: Name of the project
     title:
       type: string
-      value: My service API
+      value: Example of a service API
       description: Title of the project
     description:
       type: string
-      value: My service description
+      value: Description for an example of a service API
       description: Description of the project
     environment:
       type: enum
       value: DEV
       env: PROJECT_ENV
       enum: [DEV, STG, PROD]
+      description: Project environment
 
 grpc:
   type: struct

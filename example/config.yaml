@@ -1,4 +1,3 @@
-age: 0
 debug: true
 grpc:
     host: 127.0.0.1
@@ -9,9 +8,8 @@ grpc:
     time: 15
     timeout: 15
 logLevel: DEBUG
-name: Evald
 project:
-    description: My service description
+    description: Description for an example of a service API
     environment: DEV
-    name: my-service-api
-    title: My service API
+    name: example-service-api
+    title: Example of a service API
