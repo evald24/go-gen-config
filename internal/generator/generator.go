@@ -266,6 +266,7 @@ func mergeDiffConfig(new, old map[string]interface{}) map[string]interface{} {
 	for k, v := range old {
 		if v, ok := v.(map[string]interface{}); ok {
 			new[k] = mergeDiffConfig(new[k].(map[string]interface{}), v)
+			continue
 		}
 		new[k] = v
 	}

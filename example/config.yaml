@@ -1,4 +1,3 @@
-complex: 0i
 debug: true
 grpc:
   host: 127.0.0.1
