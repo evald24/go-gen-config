@@ -1,12 +1,4 @@
 debug: true
-grpc:
-  host: 127.0.0.1
-  maxConnectionAge: 5
-  maxConnectionAgeGrace: 5
-  maxConnectionIdle: 5
-  port: 50051
-  time: 15
-  timeout: 15
 logLevel: DEBUG
 project:
   description: Description for an example of a service API
