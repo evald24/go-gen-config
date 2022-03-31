@@ -13,7 +13,11 @@ A convenient configuration generator based on an `yaml` template with `env` supp
 GOPATH=./bin go install github.com/evald24/go-gen-config/cmd/go-gen-config
 ```
 
-Usage:
+## Usage:
+
+At the beginning, create a file with a configuration template (e.g. [`config.template.yaml`](/example/config.template.yaml))
+
+Then execute the generation command:
 
 ```zsh
 ./bin/go-gen-config -t ./example/config.template.yaml -o ./example/config/config.gen.go -c ./example/config.yaml

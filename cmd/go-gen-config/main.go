@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/evald24/go-gen-config/internal/generator"
 )
@@ -20,12 +21,10 @@ func main() {
 	flag.StringVar(&configPath, "c", "", "Path to the generate config file (yaml)")
 	flag.Parse()
 
-	checkNoEmpty(
-		map[string]interface{}{
-			"template": templatePath,
-			"ouput":    outputPath,
-			"config":   configPath,
-		})
+	checkNoEmpty(map[string]string{
+		"template": templatePath,
+		"ouput":    outputPath,
+	})
 
 	gen := generator.New(templatePath, outputPath, configPath)
 	if err := gen.Generate(); err != nil {
@@ -33,12 +32,12 @@ func main() {
 		return
 	}
 
-	fmt.Println("Generate template done")
+	fmt.Println("Template generation is complete")
 }
 
-func checkNoEmpty(paths map[string]interface{}) {
-	for k := range paths {
-		if outputPath == "" {
+func checkNoEmpty(paths map[string]string) {
+	for k, v := range paths {
+		if strings.TrimSpace(v) == "" {
 			log.Fatalf("%v path is empty", k)
 		}
 	}
