@@ -5,8 +5,7 @@
 ![Code size](https://img.shields.io/github/languages/code-size/evald24/go-gen-config?color=blue)
 ![Go version](https://img.shields.io/github/go-mod/go-version/evald24/go-gen-config?color=blue&logo=go)
 
-Convenient configuration generator based on yaml template
-
+A convenient configuration generator based on an `yaml` template with `env` support and the possibility of a hot reload
 ## Install
 
 ```zsh
@@ -107,8 +106,6 @@ type Config struct {
 	Debug bool `yaml:"debug" env:"DEBUG" default:"true"`
 	// LogLevel - Description of the variable
 	LogLevel EnumLogLevel `yaml:"logLevel" env:"LOG_LEVEL" default:"DEBUG"`
-	// Grpc -
-	Grpc StructGrpc `yaml:"grpc"`
 	// Project - Project information
 	Project StructProject `yaml:"project"`
 }
@@ -126,24 +123,6 @@ const (
 	// LogLevelError - Description of the variable
 	LogLevelError = "ERROR"
 )
-
-// StructGrpc -
-type StructGrpc struct {
-	// Port -
-	Port uint16 `yaml:"port" env:"GRPC_PORT" default:"50051"`
-	// MaxConnectionAge - MaxConnectionAge is a duration for the maximum amount of time a connection may exist before it will be closed by sending a GoAway.
-	MaxConnectionAge int64 `yaml:"maxConnectionAge" default:"5"`
-	// MaxConnectionAgeGrace - MaxConnectionAgeGrace is an additive period after MaxConnectionAge after which the connection will be forcibly closed.
-	MaxConnectionAgeGrace int64 `yaml:"maxConnectionAgeGrace" default:"5"`
-	// MaxConnectionIdle - MaxConnectionIdle is a duration for the amount of time after which an idle connection would be closed by sending a GoAway.
-	MaxConnectionIdle int64 `yaml:"maxConnectionIdle" default:"5"`
-	// Time - After a duration of this time if the server doesn't see any activity it pings the client to see if the transport is still alive.
-	Time int64 `yaml:"time" default:"15"`
-	// Timeout - After having pinged for keepalive check, the server waits for a duration of Timeout and if no activity is seen even after that the connection is closed
-	Timeout int64 `yaml:"timeout" default:"15"`
-	// Host -
-	Host string `yaml:"host" env:"GRPC_HOST" default:"127.0.0.1"`
-}
 
 // StructProject - Project information
 type StructProject struct {
