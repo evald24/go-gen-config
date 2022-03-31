@@ -3,7 +3,6 @@
 ![License](https://img.shields.io/github/license/evald24/go-gen-config?color=blue)
 ![Release](https://img.shields.io/github/v/release/evald24/go-gen-config)
 ![Code size](https://img.shields.io/github/languages/code-size/evald24/go-gen-config?color=blue)
-![Homebrew](https://img.shields.io/badge/homebrew-v0.3.1-blue?logo=homebrew)
 ![Go version](https://img.shields.io/github/go-mod/go-version/evald24/go-gen-config?color=blue&logo=go)
 
 Convenient configuration generator based on yaml template
