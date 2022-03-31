@@ -14,11 +14,11 @@ Usage:
 ./bin/go-gen-config -t ./example/config.template.yaml -o ./example/config/config.gen.go -c ./example/config.yaml
 ```
 
-| Args | Description                                                                                                                     |
-| :--: | ------------------------------------------------------------------------------------------------------------------------------- |
-| `-t` | `required` The path to the yaml template file                                                                                   |
-| `-o` | `required` The path where the code will be generated                                                                            |
-| `-c` | `optional` The path where the configuration file will be generated.If the file already exists, it only adds new default values. |
+| Args | Description                                                                                                                      |
+| :--: | -------------------------------------------------------------------------------------------------------------------------------- |
+| `-t` | `required` The path to the yaml template file                                                                                    |
+| `-o` | `required` The path where the code will be generated                                                                             |
+| `-c` | `optional` The path where the configuration file will be generated. If the file already exists, it only adds new default values. |
 
 ## Schema
 
@@ -227,9 +227,10 @@ You can see the full example of the template here: [`example/config.template.yam
 
 | Attribute                                             | Description                                                                                                             |
 | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `string`                                              | Text, the type will be specified in the code similarly                                                                  |
 | `bool`                                                | Boolean values are those which can be assigned `true` or `false`                                                        |
+| `string`                                              | Text, the type will be specified in the code similarly                                                                  |
+| `enum`                                                | Define an enumeration as a list of enumeration elements in the `enum` field                                             |
 | `int`, `int8`, `int16`, `int32`, `int64`, `rune`      | Integer, the type will be specified in the code similarly                                                               |
 | `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `byte` | A unsigned integer, the type will be specified in the code similarly                                                    |
 | `float32`, `float64`                                  | Single precision floating point format, the type will be specified in the code similarly                                |
-| `struct`                                              | The structure in which the fields are specified in 'value` can be used for grouping. Can recursively contain structures |
+| `struct`                                              | The structure in which the fields are specified in `value` can be used for grouping. Can recursively contain structures |
