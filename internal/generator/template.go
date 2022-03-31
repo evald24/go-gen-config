@@ -100,7 +100,6 @@ func UpdateConfig() error {
 `))
 
 type ConfigItem struct {
-	Key         string
 	Name        string
 	Description string
 	Type        string
@@ -112,7 +111,7 @@ type ConfigItem struct {
 	IsStruct bool
 	Env      string
 	Enums    []EnumKV
-	Items    []ConfigItem
+	Items    map[string]ConfigItem
 }
 
 type EnumKV struct {

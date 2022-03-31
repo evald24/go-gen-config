@@ -8,13 +8,13 @@ import (
 	"go/token"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/evald24/go-gen-config/internal/helpers"
 	"github.com/iancoleman/strcase"
-	"golang.org/x/sys/unix"
 	"gopkg.in/yaml.v3"
 )
 
@@ -48,9 +48,9 @@ func (g *generator) readTemplate() error {
 	return nil
 }
 
-func getParams(cfgMap map[string]interface{}, structName string) ([]ConfigItem, error) {
+func getParams(cfgMap map[string]interface{}, structName string) (map[string]ConfigItem, error) {
 
-	params := make([]ConfigItem, 0, len(cfgMap))
+	params := make(map[string]ConfigItem)
 	for k, v := range cfgMap {
 		value, ok := v.(map[string]interface{})
 		if !ok {
@@ -63,6 +63,28 @@ func getParams(cfgMap map[string]interface{}, structName string) ([]ConfigItem, 
 		defaultValue := helpers.GetString(value, "value")
 		env := helpers.GetString(value, "env")
 
+		// Optimizing structures for efficient memory allocation
+		var key string
+		switch valueType {
+		case "bool":
+			key = "0"
+		case "uint8", "byte", "int8":
+			key = "1"
+		case "uint16", "int16":
+			key = "2"
+		case "uint32", "int32", "rune", "int", "uint", "float32":
+			key = "3"
+		case "uint64", "int64", "float64":
+			key = "4"
+		case "string":
+			key = "7"
+		case "enum":
+			key = "8"
+		default:
+			key = "9"
+		}
+		key += valueType + k
+
 		tags := fmt.Sprintf("yaml:\"%s\"", k)
 		if len(env) > 0 {
 			tags += fmt.Sprintf(" env:\"%s\"", env)
@@ -74,15 +96,15 @@ func getParams(cfgMap map[string]interface{}, structName string) ([]ConfigItem, 
 		tags = fmt.Sprintf("`%s`", tags)
 
 		if helpers.Contains(baseTypes, valueType) {
-			params = append(params, ConfigItem{
-				Key:         k,
+			params[key] = ConfigItem{
 				Name:        name,
 				Description: description,
 				Type:        valueType,
 				Tags:        tags,
 				Env:         env,
 				Default:     defaultValue,
-			})
+			}
+			continue
 		}
 
 		if valueType == "enum" {
@@ -96,8 +118,7 @@ func getParams(cfgMap map[string]interface{}, structName string) ([]ConfigItem, 
 				})
 			}
 
-			params = append(params, ConfigItem{
-				Key:         k,
+			params[key] = ConfigItem{
 				Name:        name,
 				Description: description,
 				Type:        strcase.ToCamel(valueType + "_" + structName + "_" + name),
@@ -106,7 +127,8 @@ func getParams(cfgMap map[string]interface{}, structName string) ([]ConfigItem, 
 				Enums:       enumKV,
 				Env:         env,
 				Default:     defaultValue,
-			})
+			}
+			continue
 		}
 
 		if valueType == "struct" {
@@ -115,8 +137,7 @@ func getParams(cfgMap map[string]interface{}, structName string) ([]ConfigItem, 
 				return nil, err
 			}
 
-			params = append(params, ConfigItem{
-				Key:         k,
+			params[key] = ConfigItem{
 				Name:        name,
 				Description: description,
 				Type:        strcase.ToCamel(valueType + "_" + structName + "_" + name),
@@ -124,14 +145,17 @@ func getParams(cfgMap map[string]interface{}, structName string) ([]ConfigItem, 
 				IsStruct:    true,
 				Env:         env,
 				Items:       items,
-			})
+			}
+			continue
 		}
+
+		return nil, fmt.Errorf("failed to generate code, unsupported type \"%s\" for the \"%s\" field", valueType, k)
 	}
 
 	return params, nil
 }
 
-func (g *generator) buildTemplate(tpl *template.Template, params []ConfigItem) (*bytes.Buffer, error) {
+func (g *generator) buildTemplate(tpl *template.Template, params map[string]ConfigItem) (*bytes.Buffer, error) {
 	var buf bytes.Buffer
 	if err := tpl.Execute(&buf, params); err != nil {
 		return nil, fmt.Errorf("execute template: %v", err)
@@ -206,12 +230,15 @@ func (g *generator) Generate() error {
 		return fmt.Errorf("create config file: %v", err)
 	}
 
-	bytesConfig, err := yaml.Marshal(config)
-	if err != nil {
+	var b bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&b)
+	yamlEncoder.SetIndent(2)
+
+	if err := yamlEncoder.Encode(&config); err != nil {
 		return err
 	}
 
-	if _, err := configFile.WriteAt(bytesConfig, 0); err != nil {
+	if _, err := configFile.WriteAt(b.Bytes(), 0); err != nil {
 		return err
 	}
 
@@ -222,9 +249,13 @@ func (g *generator) Generate() error {
 		return err
 	}
 
-	p := filepath.Join(dir, "bin/gofmt")
-	if err := unix.Exec(p, []string{"-s", "-w", g.outputPath}, os.Environ()); err != nil {
-		return fmt.Errorf("cannot execute gofmt: %v", err)
+	cmd := exec.Command(filepath.Join(dir, "bin/gofmt"), "-s", "-w", g.outputPath)
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start gofmt: %v", err)
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("failed to execute gofmt: %v", err)
 	}
 
 	return nil
