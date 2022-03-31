@@ -86,7 +86,7 @@ project:
 ```go
 ...
 
-package congig
+package config
 
 ...
 
