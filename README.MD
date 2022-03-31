@@ -14,11 +14,11 @@ Usage:
 ./bin/go-gen-config -t ./example/config.template.yaml -o ./example/config/config.gen.go -c ./example/config.yaml
 ```
 
-| Args | Description                                                                                                              |
-| :--: | ------------------------------------------------------------------------------------------------------------------------ |
-| `-t` | `required` The path to the yaml template file                                                                            |
-| `-o` | `required` The path where the code will be generated                                                                     |
-| `-c` | `optional` The path where the configuration file will be generated. Caution when generating completely replaces the file |
+| Args | Description                                                                                                                     |
+| :--: | ------------------------------------------------------------------------------------------------------------------------------- |
+| `-t` | `required` The path to the yaml template file                                                                                   |
+| `-o` | `required` The path where the code will be generated                                                                            |
+| `-c` | `optional` The path where the configuration file will be generated.If the file already exists, it only adds new default values. |
 
 ## Schema
 

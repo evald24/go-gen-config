@@ -187,18 +187,31 @@ func (g *generator) Generate() error {
 
 	config := getConfig(g.cfgMap)
 
+	// read or create a configuration file
+	configFile, _ := os.OpenFile(g.configPath, os.O_RDWR, 0770)
+	if configFile != nil {
+		var oldConfig map[string]interface{}
+		if err := yaml.NewDecoder(configFile).Decode(&oldConfig); err == nil {
+			config = mergeDiffConfig(config, oldConfig)
+		}
+	} else {
+		configFile, err = helpers.CreateFile(g.configPath)
+		if err != nil {
+			return fmt.Errorf("create config file: %v", err)
+		}
+	}
+	defer configFile.Close()
+
+	if err := os.Truncate(g.configPath, 0); err != nil {
+		return fmt.Errorf("create config file: %v", err)
+	}
+
 	bytesConfig, err := yaml.Marshal(config)
 	if err != nil {
 		return err
 	}
 
-	configFile, err := helpers.CreateFile(g.configPath)
-	if err != nil {
-		return fmt.Errorf("create config file: %v", err)
-	}
-	defer configFile.Close()
-
-	if _, err := configFile.Write(bytesConfig); err != nil {
+	if _, err := configFile.WriteAt(bytesConfig, 0); err != nil {
 		return err
 	}
 
@@ -215,6 +228,18 @@ func (g *generator) Generate() error {
 	}
 
 	return nil
+}
+
+// mergeDiffConfig - replace the new value with the old one
+func mergeDiffConfig(new, old map[string]interface{}) map[string]interface{} {
+	for k, v := range old {
+		if v, ok := v.(map[string]interface{}); ok {
+			new[k] = mergeDiffConfig(new[k].(map[string]interface{}), v)
+		}
+		new[k] = v
+	}
+
+	return new
 }
 
 func getConfig(cfg map[string]interface{}) map[string]interface{} {
