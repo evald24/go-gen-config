@@ -59,26 +59,26 @@ const (
 )
 
 // GetConfig - get the configuration
-func GetConfig() Config {
-	return *cfg
+func GetConfig() *Config {
+	return cfg
 }
 
 var fileConfig string
 var cfg *Config
 
 // Init - initializing the configuration
-func Init(configPath string) error {
+func Init(configPath string) (*Config, error) {
 	fileConfig = configPath
 
 	if cfg != nil {
-		return fmt.Errorf("The configuration has already been initialized")
+		return nil, fmt.Errorf("The configuration has already been initialized")
 	}
 
 	if err := UpdateConfig(); err != nil {
-		return fmt.Errorf("Configuration initialization failed: %v", err)
+		return nil, fmt.Errorf("Configuration initialization failed: %v", err)
 	}
 
-	return nil
+	return cfg, nil
 }
 
 // UpdateConfig - Updates the configuration by rereading

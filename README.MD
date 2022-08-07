@@ -148,15 +148,15 @@ const (
 )
 
 // GetConfig - get the configuration
-func GetConfig() Config {
-	return *cfg
+func GetConfig() *Config {
+	return cfg
 }
 
 var fileConfig string
 var cfg *Config
 
 // Init - initializing the configuration
-func Init(configPath string) error {
+func Init(configPath string) (*Config, error) {
 	...
 }
 
@@ -184,14 +184,15 @@ import (
 )
 
 func main() {
-	if err := config.Init("example/config.yaml"); err != nil {
+	cfg, err := config.Init("example/config.yaml");
+	if err != nil {
 		log.Fatal(err)
 	}
 
 	go hotReloadConfig()
 
-	fmt.Printf("config: %+v\n", config.GetConfig())
-	fmt.Printf("project name: %s", config.GetConfig().Project.Name)
+	fmt.Printf("config: %+v\n", cfg)
+	fmt.Printf("project name: %s", cfg.Project.Name)
 }
 
 // Example of a hot reload configuration
